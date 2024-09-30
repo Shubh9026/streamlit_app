@@ -5,6 +5,10 @@ from byaldi import RAGMultiModalModel
 import numpy as np
 import os
 import traceback
+import cv2
+
+# Monkey patch to fix ANTIALIAS deprecation
+Image.ANTIALIAS = Image.LANCZOS
 
 # Initialize EasyOCR reader
 @st.cache_resource
@@ -32,7 +36,12 @@ def perform_ocr(image):
     if reader is None:
         return "OCR reader not initialized properly."
     try:
-        result = reader.readtext(np.array(image))
+        # Convert PIL Image to numpy array
+        img_array = np.array(image)
+        # Convert RGB to BGR (if necessary)
+        if len(img_array.shape) == 3 and img_array.shape[2] == 3:
+            img_array = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
+        result = reader.readtext(img_array)
         extracted_text = ' '.join([text for _, text, _ in result])
         return extracted_text.strip() or "No text found in the image."
     except Exception as e:
