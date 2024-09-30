@@ -1,8 +1,7 @@
 import streamlit as st
-import pytesseract
+import easyocr
 from PIL import Image
 from byaldi import RAGMultiModalModel
-import cv2
 import numpy as np
 import os
 
@@ -13,26 +12,20 @@ def load_model():
 
 RAG = load_model()
 
-# Define the Tesseract command path if needed
-pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
+# Initialize EasyOCR reader
+@st.cache_resource
+def load_ocr_reader():
+    return easyocr.Reader(['en', 'hi'])  # For English and Hindi
 
-@st.cache_data
-def preprocess_image(image):
-    # Convert PIL Image to OpenCV format
-    img = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-    # Convert to grayscale
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    # Apply thresholding
-    _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-    return Image.fromarray(thresh)
+reader = load_ocr_reader()
 
 def perform_ocr(image):
-    """Extract text from the uploaded image."""
+    """Extract text from the uploaded image using EasyOCR."""
     try:
-        preprocessed_image = preprocess_image(image)
-        extracted_text = pytesseract.image_to_string(preprocessed_image, lang="eng+hin")
+        result = reader.readtext(np.array(image))
+        extracted_text = ' '.join([text for _, text, _ in result])
         if not extracted_text.strip():
-            return "No text found in the image. Make sure Hindi language is supported."
+            return "No text found in the image."
         return extracted_text
     except Exception as e:
         st.error(f"Error in OCR processing: {str(e)}")
