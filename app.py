@@ -4,35 +4,46 @@ from PIL import Image
 from byaldi import RAGMultiModalModel
 import numpy as np
 import os
-
-# Load the Byaldi model
-@st.cache_resource
-def load_model():
-    return RAGMultiModalModel.from_pretrained("vidore/colpali-v1.2")
-
-RAG = load_model()
+import traceback
 
 # Initialize EasyOCR reader
 @st.cache_resource
 def load_ocr_reader():
-    return easyocr.Reader(['en', 'hi'])  # For English and Hindi
+    try:
+        return easyocr.Reader(['en', 'hi'])  # For English and Hindi
+    except Exception as e:
+        st.error(f"Error loading OCR reader: {str(e)}")
+        return None
+
+# Load the Byaldi model
+@st.cache_resource
+def load_rag_model():
+    try:
+        return RAGMultiModalModel.from_pretrained("vidore/colpali-v1.2")
+    except Exception as e:
+        st.error(f"Error loading RAG model: {str(e)}")
+        return None
 
 reader = load_ocr_reader()
+RAG = load_rag_model()
 
 def perform_ocr(image):
     """Extract text from the uploaded image using EasyOCR."""
+    if reader is None:
+        return "OCR reader not initialized properly."
     try:
         result = reader.readtext(np.array(image))
         extracted_text = ' '.join([text for _, text, _ in result])
-        if not extracted_text.strip():
-            return "No text found in the image."
-        return extracted_text
+        return extracted_text.strip() or "No text found in the image."
     except Exception as e:
         st.error(f"Error in OCR processing: {str(e)}")
+        st.error(traceback.format_exc())
         return None
 
 def index_image(image):
     """Index the image using Byaldi."""
+    if RAG is None:
+        return "RAG model not initialized properly."
     try:
         temp_image_path = "temp_uploaded_image.png"
         image.save(temp_image_path)
@@ -47,55 +58,45 @@ def index_image(image):
         return index_name
     except Exception as e:
         st.error(f"Error in indexing: {str(e)}")
+        st.error(traceback.format_exc())
         return None
 
 def search_keyword(extracted_text, keyword):
     """Search for the keyword in the extracted text."""
     if extracted_text and keyword:
-        if keyword.lower() in extracted_text.lower():
-            return f"Keyword '{keyword}' found in the extracted text!"
-        else:
-            return f"Keyword '{keyword}' not found in the extracted text."
-    else:
-        return "No text available to search."
+        return f"Keyword '{keyword}' {'found' if keyword.lower() in extracted_text.lower() else 'not found'} in the extracted text."
+    return "No text available to search."
 
-@st.cache_data
 def process_image(image):
     """Process the image, extract text, and index it."""
     extracted_text = perform_ocr(image)
-    if not extracted_text:
-        return None, None
-    index_result = index_image(image)
-    if not index_result:
-        return extracted_text, None
-    return extracted_text, "Image indexed successfully."
+    index_result = index_image(image) if extracted_text else None
+    return extracted_text, "Image indexed successfully." if index_result else "Indexing failed."
 
 # Streamlit interface
 st.title("OCR and Keyword Search Application")
 
-# Upload an image
 uploaded_image = st.file_uploader("Upload an Image", type=["png", "jpg", "jpeg"])
 
-# If an image is uploaded, process it
 if uploaded_image:
-    image = Image.open(uploaded_image)
-    st.image(image, caption="Uploaded Image", use_column_width=True)
-    
-    extracted_text, index_status = process_image(image)
+    try:
+        image = Image.open(uploaded_image)
+        st.image(image, caption="Uploaded Image", use_column_width=True)
+        
+        extracted_text, index_status = process_image(image)
 
-    # Display extracted text
-    if extracted_text:
-        st.subheader("Extracted Text")
-        st.text(extracted_text)
+        if extracted_text:
+            st.subheader("Extracted Text")
+            st.text(extracted_text)
 
-    # Display index status
-    if index_status:
         st.subheader("Indexing Status")
         st.text(index_status)
 
-    # Keyword search
-    keyword = st.text_input("Enter a keyword to search")
-    if keyword:
-        search_result = search_keyword(extracted_text, keyword)
-        st.subheader("Search Result")
-        st.text(search_result)
+        keyword = st.text_input("Enter a keyword to search")
+        if keyword:
+            search_result = search_keyword(extracted_text, keyword)
+            st.subheader("Search Result")
+            st.text(search_result)
+    except Exception as e:
+        st.error(f"An error occurred while processing the image: {str(e)}")
+        st.error(traceback.format_exc())

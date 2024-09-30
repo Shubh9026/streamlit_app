@@ -1,4 +1,4 @@
-Byaldi==0.0.4
+byaldi==0.0.4
 numpy>=1.26.0
 Pillow==10.4.0
 opencv_python==4.10.0.84
