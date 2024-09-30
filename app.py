@@ -2,7 +2,7 @@ import streamlit as st
 import pytesseract
 from PIL import Image
 from byaldi import RAGMultiModalModel
-import cv2
+import cv
 import numpy as np
 
 # Load the Byaldi model
