@@ -4,3 +4,4 @@ opencv_python==4.10.0.84
 Pillow==10.4.0
 pytesseract==0.3.13
 streamlit==1.38.0
+opencv-python-headless
