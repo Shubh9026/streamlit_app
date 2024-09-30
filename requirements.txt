@@ -1,5 +1,5 @@
 Byaldi==0.0.4
-numpy==1.23.5 
+numpy>=1.26.0
 opencv_python==4.10.0.84
 Pillow==10.4.0
 pytesseract==0.3.13
