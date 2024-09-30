@@ -1,5 +1,5 @@
 byaldi==0.0.4
-numpy>=1.26.0
+numpy==1.21.6 
 Pillow>=10.0.0
 opencv_python==4.10.0.84
 easyocr==1.6.2
