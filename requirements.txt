@@ -1,6 +1,7 @@
 Byaldi==0.0.4
 numpy>=1.26.0
 Pillow==10.4.0
+opencv_python==4.10.0.84
 easyocr==1.7.0
 streamlit==1.38.0
 opencv-python-headless
