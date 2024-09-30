@@ -1,4 +1,4 @@
-mport streamlit as st
+import streamlit as st
 import pytesseract
 from PIL import Image
 from byaldi import RAGMultiModalModel
